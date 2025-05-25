@@ -1,4 +1,4 @@
-# 🥭 Frutty — Aplikasi Mobile Informasi & Toko Buah Pintar
+# 🍅 Frutty — Aplikasi Toko Buah 
 
 Frutty adalah aplikasi mobile bertema buah yang dikembangkan sebagai tugas akhir mata kuliah **Teknologi dan Pemrograman Mobile**. Aplikasi ini memadukan fitur edukasi buah, toko buah digital, serta pemanfaatan API, konversi, sensor, dan database lokal.
 
@@ -70,10 +70,4 @@ lib/
    ````
 
 > Pastikan emulator aktif atau perangkat Android terhubung.
-
-## 📚 Lisensi
-
-Proyek ini dikembangkan untuk keperluan pendidikan dan tidak untuk tujuan komersial.
-
-```
 
