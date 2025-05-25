@@ -8,6 +8,8 @@ import 'package:fruitymart/views/conversion/currency_page.dart';
 import 'package:fruitymart/views/conversion/time_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
   runApp(const FruityMartApp());
 }
 
