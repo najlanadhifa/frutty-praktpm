@@ -57,27 +57,19 @@ lib/
    ```
    git clone https://github.com/username/frutty.git
    cd frutty
-````
-
+   ````
 2. **Install dependencies**
-
    ```
    flutter pub get
-   ```
+   ````
 
 3. **Jalankan aplikasi**
 
    ```
    flutter run
-   ```
+   ````
 
 > Pastikan emulator aktif atau perangkat Android terhubung.
-
-## 👨‍💻 Developer
-
-* **Nama**: \[Nama kamu]
-* **NIM**: \[NIM kamu]
-* **Kelas**: \[Kelas kamu]
 
 ## 📚 Lisensi
 
