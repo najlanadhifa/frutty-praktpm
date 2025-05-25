@@ -16,19 +16,6 @@ Frutty adalah aplikasi mobile bertema buah yang dikembangkan sebagai tugas akhir
 - 📝 Saran dan kesan terhadap mata kuliah
 - 🚪 Logout dan manajemen sesi
 
-## 🛠️ Teknologi yang Digunakan
-
-- **Bahasa**: Dart
-- **Framework**: Flutter
-- **Database Lokal**: SQLite
-- **State Management**: Provider
-- **API**: [Fruityvice](https://www.fruityvice.com/)
-- **Enkripsi Password**: `crypto`
-- **Session**: `shared_preferences`
-- **Notifikasi**: `flutter_local_notifications`
-- **Sensor**: `flutter_sensors`
-- **Konversi Waktu**: `intl`
-
 ## 📂 Struktur Proyek 
 
 ```
