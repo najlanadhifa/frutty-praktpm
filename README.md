@@ -55,7 +55,7 @@ lib/
 
 1. **Clone repositori**
    ```
-   git clone https://github.com/username/frutty.git
+   git clone https://github.com/najlanadhifa/frutty-tpm.git
    cd frutty
    ````
 2. **Install dependencies**
