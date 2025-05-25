@@ -43,7 +43,7 @@ lib/
 1. **Clone repositori**
    ```
    git clone https://github.com/najlanadhifa/frutty-tpm.git
-   cd frutty
+   cd frutty-tpm
    ````
 2. **Install dependencies**
    ```
