@@ -16,28 +16,6 @@ Frutty adalah aplikasi mobile bertema buah yang dikembangkan sebagai tugas akhir
 - 📝 Saran dan kesan terhadap mata kuliah
 - 🚪 Logout dan manajemen sesi
 
-## 📂 Struktur Proyek 
-
-```
-
-lib/
-├── main.dart
-├── core/
-│   ├── constants/
-│   ├── services/
-│   ├── utils/
-├── models/
-├── views/
-│   ├── auth/
-│   ├── home/
-│   ├── profile/
-│   ├── conversion/
-│   ├── splash/
-├── widgets/
-├── providers/
-
-````
-
 ## 🚀 Cara Menjalankan Aplikasi
 
 1. **Clone repositori**
