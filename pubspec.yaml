@@ -1,6 +1,6 @@
 name: frutty
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -9,11 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    crypto: ^3.0.2
-    flutter_local_notifications: ^12.0.4
-    hive: ^2.2.3
-    hive_flutter: ^1.1.0
-    sensors_plus: ^3.0.2
+  cupertino_icons: ^1.0.8
+  http: ^1.4.0
+  shared_preferences: ^2.1.0
+  intl: ^0.18.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +22,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+assets:
+  - assets/images/
