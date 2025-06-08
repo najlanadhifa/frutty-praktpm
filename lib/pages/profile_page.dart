@@ -94,7 +94,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/images/profile.png',
+                      'assets/images/difa.jpg',
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
