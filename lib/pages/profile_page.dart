@@ -98,22 +98,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        // Fallback jika gambar tidak ditemukan
-                        return Container(
-                          width: 100,
-                          height: 100,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.white,
-                          ),
-                        );
-                      },
                     ),
                   ),
                 ),
