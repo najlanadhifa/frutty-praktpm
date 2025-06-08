@@ -1,5 +1,5 @@
 name: frutty
-description: "A new Flutter project."
+description: "Aplikasi buah"
 publish_to: "none"
 version: 0.1.0
 
@@ -9,19 +9,35 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  http: ^1.4.0
-  shared_preferences: ^2.1.0
-  intl: ^0.18.0
+
+  cupertino_icons: ^1.0.8 # ikon untuk ios
+  flutter_local_notifications: ^19.2.1 # notifikasi lokal
+  flutter_map: ^8.1.1 # untuk tampilkan peta
+  geolocator: ^13.0.4 # ambil lokasi pengguna
+  hive: ^2.2.3 # database lokal
+  hive_flutter: ^1.1.0 # integrasi hive dengan flutter
+  http: ^1.4.0 # untuk http request
+  image_picker: ^1.0.7 # ambil gambar dari kamera/galeri
+  latlong2: ^0.9.1 # bantu kelola koordinat
+  path_provider: ^2.1.5 # akses direktori file
+  permission_handler: ^12.0.0+1 # minta izin akses perangkat
+  provider: ^6.1.5 # state management
+  sensors_plus: ^6.1.1 # akses sensor seperti accelerometer
+  shared_preferences: ^2.2.2 # simpan data lokal sederhana
+  url_launcher: ^6.3.1 # buka url/link dari aplikasi
   crypto: ^3.0.3
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
 
+  build_runner: ^2.4.15 # bantu generate kode
+  hive_generator: ^2.0.1 # generator adapter hive
+
 flutter:
   uses-material-design: true
 
 assets:
-  - assets/images/
+  - assets/

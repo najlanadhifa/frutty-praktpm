@@ -1,174 +1,249 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:hive/hive.dart';
 import '../models/fruit_model.dart';
 
-const String baseUrl = "https://www.fruityvice.com/api/fruit/all";
+class FruitService {
+  static const String apiUrl = 'https://www.fruityvice.com/api/fruit/all';
+  static const String fruitsBoxName = 'fruits_cache';
+  static const String lastUpdateKey = 'last_update';
+  
+  // Cache duration - 24 jam
+  static const Duration cacheValidDuration = Duration(hours: 24);
+  
+  // Timeout untuk request API
+  final Duration timeout = const Duration(seconds: 10);
 
-class ApiService {
-  // Map untuk menyimpan harga buah yang Anda tentukan sendiri
-  static final Map<String, int> _fruitPrices = {
-    'Apple': 8000,
-    'Apricot': 15000,
-    'Avocado': 12000,
-    'Banana': 5000,
-    'Blackberry': 25000,
-    'Blueberry': 30000,
-    'Cherry': 20000,
-    'Coconut': 10000,
-    'Cranberry': 18000,
-    'Cucumber': 7000,
-    'Currant': 22000,
-    'Dragon Fruit': 35000,
-    'Durian': 40000,
-    'Elderberry': 28000,
-    'Feijoa': 16000,
-    'Fig': 14000,
-    'Gooseberry': 19000,
-    'Grape': 13000,
-    'GreenApple': 9000,
-    'Guava': 11000,
-    'Kiwi': 17000,
-    'Lemon': 6000,
-    'Lime': 7500,
-    'Lychee': 24000,
-    'Mango': 12000,
-    'Melon': 8500,
-    'Orange': 9500,
-    'Papaya': 10500,
-    'Passion Fruit': 32000,
-    'Peach': 15500,
-    'Pear': 11500,
-    'Persimmon': 21000,
-    'Pineapple': 13500,
-    'Plum': 16500,
-    'Pomegranate': 26000,
-    'Raspberry': 27000,
-    'Strawberry': 18500,
-    'Tangerine': 10000,
-    'Tomato': 5500,
-    'Watermelon': 6500,
-  };
-
-  // Map untuk URL gambar buah yang lebih reliable
-  static final Map<String, String> _fruitImages = {
-    'Apple': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=400&fit=crop',
-    'Apricot': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Avocado': 'https://images.unsplash.com/photo-1583171542089-0160647b2fe9?w=400&h=400&fit=crop',
-    'Banana': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Blackberry': 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=400&h=400&fit=crop',
-    'Blueberry': 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=400&h=400&fit=crop',
-    'Cherry': 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?w=400&h=400&fit=crop',
-    'Coconut': 'https://images.unsplash.com/photo-1520637836862-4d197d17c60a?w=400&h=400&fit=crop',
-    'Cranberry': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Cucumber': 'https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&h=400&fit=crop',
-    'Dragon Fruit': 'https://images.unsplash.com/photo-1526318472351-c75fcf070305?w=400&h=400&fit=crop',
-    'Durian': 'https://images.unsplash.com/photo-1526318472351-c75fcf070305?w=400&h=400&fit=crop',
-    'Fig': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Grape': 'https://images.unsplash.com/photo-1537640538966-79f369143ea8?w=400&h=400&fit=crop',
-    'GreenApple': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=400&fit=crop',
-    'Guava': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Kiwi': 'https://images.unsplash.com/photo-1585059895524-72359e06133a?w=400&h=400&fit=crop',
-    'Lemon': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop',
-    'Lime': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop',
-    'Lychee': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Mango': 'https://images.unsplash.com/photo-1553279293-d726e752fc7e?w=400&h=400&fit=crop',
-    'Melon': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Orange': 'https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?w=400&h=400&fit=crop',
-    'Papaya': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Passion Fruit': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Peach': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Pear': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Persimmon': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Pineapple': 'https://images.unsplash.com/photo-1550828520-4cb496926fc8?w=400&h=400&fit=crop',
-    'Plum': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Pomegranate': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    'Raspberry': 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=400&h=400&fit=crop',
-    'Strawberry': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&h=400&fit=crop',
-    'Tangerine': 'https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?w=400&h=400&fit=crop',
-    'Tomato': 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&h=400&fit=crop',
-    'Watermelon': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-  };
-
-  static Future<List<Fruit>> fetchFruits() async {
+  // Method untuk mendapatkan semua buah
+  Future<List<FruitModel>> getAllFruits() async {
     try {
-      final response = await http.get(Uri.parse(baseUrl));
-
-      if (response.statusCode == 200) {
-        List<dynamic> jsonResponse = jsonDecode(response.body);
-
-        return jsonResponse.map((item) {
-          Map<String, dynamic> modifiedItem = Map<String, dynamic>.from(item);
+      // Buka box untuk cache buah
+      final fruitsBox = await Hive.openBox(fruitsBoxName);
+      
+      // Cek apakah cache masih valid
+      final lastUpdate = fruitsBox.get(lastUpdateKey);
+      final now = DateTime.now();
+      
+      bool shouldFetchFromAPI = true;
+      
+      if (lastUpdate != null) {
+        final lastUpdateTime = DateTime.parse(lastUpdate);
+        final timeDifference = now.difference(lastUpdateTime);
+        
+        if (timeDifference < cacheValidDuration) {
+          shouldFetchFromAPI = false;
+          print('Menggunakan cache buah (masih valid)');
+        }
+      }
+      
+      // Jika cache tidak valid atau tidak ada, coba ambil dari API
+      if (shouldFetchFromAPI) {
+        try {
+          print('Mengambil data buah dari API...');
+          final response = await http.get(Uri.parse(apiUrl)).timeout(timeout);
           
-          String fruitName = item['name'] as String;
-          
-          // Set harga berdasarkan map yang sudah ditentukan
-          modifiedItem['harga'] = _fruitPrices[fruitName] ?? 10000;
-          
-          // Set gambar berdasarkan map yang sudah ditentukan
-          modifiedItem['gambar'] = _fruitImages[fruitName] ?? 
-              'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=400&h=400&fit=crop';
-          
-          return Fruit.fromJson(modifiedItem);
-        }).toList();
+          if (response.statusCode == 200) {
+            final List<dynamic> fruitsJson = json.decode(response.body);
+            
+            // Convert JSON ke list FruitModel
+            List<FruitModel> fruits = fruitsJson.map((json) => FruitModel.fromJson(json)).toList();
+            
+            // Simpan ke cache
+            await _saveFruitsToCache(fruits, fruitsBox);
+            
+            print('Data buah berhasil diambil dari API dan disimpan ke cache');
+            return fruits;
+          } else {
+            print('API error: ${response.statusCode}');
+            // Gunakan cache jika ada
+            return await _loadFruitsFromCache(fruitsBox);
+          }
+        } catch (e) {
+          print('Exception saat mengambil data dari API: $e');
+          // Gunakan cache jika ada
+          return await _loadFruitsFromCache(fruitsBox);
+        }
       } else {
-        throw Exception('Gagal mengunggah buah: ${response.statusCode}');
+        // Gunakan cache yang masih valid
+        return await _loadFruitsFromCache(fruitsBox);
       }
     } catch (e) {
-      throw Exception('Error fetching fruits: $e');
+      print('Exception di getAllFruits: $e');
+      return [];
     }
   }
 
-  // Method untuk update harga buah secara manual jika diperlukan
-  static void updateFruitPrice(String fruitName, int newPrice) {
-    _fruitPrices[fruitName] = newPrice;
-  }
-
-  // Method untuk update gambar buah secara manual jika diperlukan  
-  static void updateFruitImage(String fruitName, String newImageUrl) {
-    _fruitImages[fruitName] = newImageUrl;
-  }
-
-  // Method untuk mendapatkan semua harga
-  static Map<String, int> getAllPrices() {
-    return Map<String, int>.from(_fruitPrices);
-  }
-
-  // Method untuk format harga dalam Rupiah dengan titik sebagai pemisah ribuan
-  static String formatRupiah(int harga) {
-    String hargaStr = harga.toString();
-    String formatted = '';
-    
-    for (int i = 0; i < hargaStr.length; i++) {
-      if (i > 0 && (hargaStr.length - i) % 3 == 0) {
-        formatted += '.';
+  // Method untuk menyimpan buah ke cache
+  Future<void> _saveFruitsToCache(List<FruitModel> fruits, Box fruitsBox) async {
+    try {
+      // Hapus data lama
+      await fruitsBox.clear();
+      
+      // Simpan setiap buah dengan key berdasarkan ID
+      for (final fruit in fruits) {
+        await fruitsBox.put('fruit_${fruit.id}', fruit);
       }
-      formatted += hargaStr[i];
+      
+      // Simpan timestamp update terakhir
+      await fruitsBox.put(lastUpdateKey, DateTime.now().toIso8601String());
+      
+      print('${fruits.length} buah berhasil disimpan ke cache');
+    } catch (e) {
+      print('Error menyimpan buah ke cache: $e');
     }
+  }
+
+  // Method untuk memuat buah dari cache
+  Future<List<FruitModel>> _loadFruitsFromCache(Box fruitsBox) async {
+    try {
+      final List<FruitModel> cachedFruits = [];
+      
+      // Ambil semua data buah dari cache
+      for (final key in fruitsBox.keys) {
+        if (key.toString().startsWith('fruit_')) {
+          final fruit = fruitsBox.get(key);
+          if (fruit is FruitModel) {
+            cachedFruits.add(fruit);
+          }
+        }
+      }
+      
+      if (cachedFruits.isNotEmpty) {
+        print('${cachedFruits.length} buah dimuat dari cache');
+        // Urutkan berdasarkan ID
+        cachedFruits.sort((a, b) => a.id.compareTo(b.id));
+        return cachedFruits;
+      } else {
+        print('Cache kosong, mengembalikan list kosong');
+        return [];
+      }
+    } catch (e) {
+      print('Error memuat buah dari cache: $e');
+      return [];
+    }
+  }
+
+  // Method untuk mendapatkan buah berdasarkan ID
+  Future<FruitModel?> getFruitById(int id) async {
+    try {
+      final fruitsBox = await Hive.openBox(fruitsBoxName);
+      final fruit = fruitsBox.get('fruit_$id');
+      
+      if (fruit is FruitModel) {
+        return fruit;
+      }
+      
+      // Jika tidak ada di cache, coba ambil semua buah dan cari
+      final allFruits = await getAllFruits();
+      return allFruits.firstWhere(
+        (fruit) => fruit.id == id,
+        orElse: () => throw Exception('Fruit not found'),
+      );
+    } catch (e) {
+      print('Exception saat mengambil buah dengan id $id: $e');
+      return null;
+    }
+  }
+
+  // Method untuk mencari buah berdasarkan nama
+  Future<List<FruitModel>> searchFruits(String query) async {
+    try {
+      final allFruits = await getAllFruits();
+      if (query.isEmpty) return allFruits;
+      
+      return allFruits.where((fruit) => 
+        fruit.name.toLowerCase().contains(query.toLowerCase())
+      ).toList();
+    } catch (e) {
+      print('Exception saat mencari buah: $e');
+      return [];
+    }
+  }
+
+  // Method untuk force refresh dari API
+  Future<List<FruitModel>> forceRefreshFromAPI() async {
+    try {
+      final fruitsBox = await Hive.openBox(fruitsBoxName);
     
-    return 'Rp $formatted';
-  }
-
-  // Method untuk mendapatkan harga buah tertentu
-  static int getFruitPrice(String fruitName) {
-    return _fruitPrices[fruitName] ?? 10000;
-  }
-
-  // Method untuk validasi harga (minimal 1000, maksimal 100000)
-  static bool isValidPrice(int price) {
-    return price >= 1000 && price <= 100000;
-  }
-
-  // Method untuk update harga dengan validasi
-  static bool updateFruitPriceWithValidation(String fruitName, int newPrice) {
-    if (isValidPrice(newPrice)) {
-      _fruitPrices[fruitName] = newPrice;
-      return true;
+      print('Force refresh: Mengambil data dari API...');
+      final response = await http.get(Uri.parse(apiUrl)).timeout(timeout);
+    
+      if (response.statusCode == 200) {
+        final List<dynamic> fruitsJson = json.decode(response.body);
+      
+        // Convert JSON ke list FruitModel
+        List<FruitModel> fruits = fruitsJson.map((json) => FruitModel.fromJson(json)).toList();
+      
+        // Simpan ke cache
+        await _saveFruitsToCache(fruits, fruitsBox);
+      
+        print('Force refresh berhasil');
+        return fruits;
+      } else {
+        throw Exception('Server tidak dapat diakses (${response.statusCode})');
+      }
+    } catch (e) {
+      print('Exception saat force refresh: $e');
+      // Jika gagal refresh, kembalikan data cache yang ada
+      final fruitsBox = await Hive.openBox(fruitsBoxName);
+      final cachedFruits = await _loadFruitsFromCache(fruitsBox);
+    
+      if (cachedFruits.isNotEmpty) {
+        throw Exception('Tidak dapat terhubung ke server. Menggunakan data cache.');
+      } else {
+        throw Exception('Tidak dapat terhubung ke server dan tidak ada data cache.');
+      }
     }
-    return false;
   }
 
-  // Method untuk mendapatkan daftar nama buah yang tersedia
-  static List<String> getAvailableFruits() {
-    return _fruitPrices.keys.toList();
+  // Method untuk menghapus cache
+  Future<void> clearCache() async {
+    try {
+      final fruitsBox = await Hive.openBox(fruitsBoxName);
+      await fruitsBox.clear();
+      print('Cache buah berhasil dihapus');
+    } catch (e) {
+      print('Error menghapus cache: $e');
+    }
+  }
+
+  // Method untuk mengecek status cache
+  Future<Map<String, dynamic>> getCacheStatus() async {
+    try {
+      final fruitsBox = await Hive.openBox(fruitsBoxName);
+      final lastUpdate = fruitsBox.get(lastUpdateKey);
+      
+      if (lastUpdate != null) {
+        final lastUpdateTime = DateTime.parse(lastUpdate);
+        final now = DateTime.now();
+        final timeDifference = now.difference(lastUpdateTime);
+        final isValid = timeDifference < cacheValidDuration;
+        
+        return {
+          'hasCache': true,
+          'lastUpdate': lastUpdateTime,
+          'isValid': isValid,
+          'timeUntilExpiry': isValid ? cacheValidDuration - timeDifference : Duration.zero,
+          'fruitsCount': fruitsBox.keys.where((key) => key.toString().startsWith('fruit_')).length,
+        };
+      } else {
+        return {
+          'hasCache': false,
+          'lastUpdate': null,
+          'isValid': false,
+          'timeUntilExpiry': Duration.zero,
+          'fruitsCount': 0,
+        };
+      }
+    } catch (e) {
+      print('Error mengecek status cache: $e');
+      return {
+        'hasCache': false,
+        'lastUpdate': null,
+        'isValid': false,
+        'timeUntilExpiry': Duration.zero,
+        'fruitsCount': 0,
+      };
+    }
   }
 }

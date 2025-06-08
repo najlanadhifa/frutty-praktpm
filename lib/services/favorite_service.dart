@@ -1,61 +1,105 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/fruit_model.dart';
 
 class FavoriteService {
-  // Menggunakan static list untuk menyimpan favorit selama session
-  // Dalam implementasi nyata, Anda bisa menggunakan SharedPreferences atau database
-  static final List<Fruit> _favorites = [];
+  static const String _favoritesKey = 'favorite_fruits';
 
-  // Mendapatkan semua buah favorit
-  static List<Fruit> getFavorites() {
-    return List<Fruit>.from(_favorites);
+  // Mendapatkan list ID favorit
+  static Future<List<String>> getFavoriteIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getStringList(_favoritesKey) ?? [];
+    } catch (e) {
+      return [];
+    }
   }
 
   // Menambah buah ke favorit
-  static void addFavorite(Fruit fruit) {
-    // Cek apakah buah sudah ada di favorit
-    if (!_favorites.any((f) => f.id == fruit.id)) {
-      _favorites.add(fruit);
+  static Future<bool> addFavorite(FruitModel fruit) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> favoriteIds = prefs.getStringList(_favoritesKey) ?? [];
+      
+      if (!favoriteIds.contains(fruit.id.toString())) {
+        favoriteIds.add(fruit.id.toString());
+        await prefs.setStringList(_favoritesKey, favoriteIds);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
   // Menghapus buah dari favorit
-  static void removeFavorite(int fruitId) {
-    _favorites.removeWhere((fruit) => fruit.id == fruitId);
-  }
-
-  // Mengecek apakah buah sudah difavoritkan
-  static bool isFavorite(int fruitId) {
-    return _favorites.any((fruit) => fruit.id == fruitId);
-  }
-
-  // Mendapatkan jumlah buah favorit
-  static int getFavoriteCount() {
-    return _favorites.length;
-  }
-
-  // Menghapus semua favorit
-  static void clearFavorites() {
-    _favorites.clear();
-  }
-
-  // Toggle favorit - menambah jika belum ada, menghapus jika sudah ada
-  static bool toggleFavorite(Fruit fruit) {
-    if (isFavorite(fruit.id)) {
-      removeFavorite(fruit.id);
-      return false; // Tidak favorit lagi
-    } else {
-      addFavorite(fruit);
-      return true; // Menjadi favorit
+  static Future<bool> removeFavorite(int fruitId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> favoriteIds = prefs.getStringList(_favoritesKey) ?? [];
+      
+      if (favoriteIds.remove(fruitId.toString())) {
+        await prefs.setStringList(_favoritesKey, favoriteIds);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
-  // Mencari buah favorit berdasarkan nama
-  static List<Fruit> searchFavorites(String query) {
-    if (query.isEmpty) return getFavorites();
-    
-    return _favorites.where((fruit) =>
-      fruit.name.toLowerCase().contains(query.toLowerCase()) ||
-      fruit.family.toLowerCase().contains(query.toLowerCase())
+  // Mengecek apakah buah sudah difavoritkan
+  static Future<bool> isFavorite(int fruitId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favoriteIds = prefs.getStringList(_favoritesKey) ?? [];
+      return favoriteIds.contains(fruitId.toString());
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Toggle favorit - menambah jika belum ada, menghapus jika sudah ada
+  static Future<bool> toggleFavorite(FruitModel fruit) async {
+    try {
+      final isCurrentlyFavorite = await isFavorite(fruit.id);
+      
+      if (isCurrentlyFavorite) {
+        await removeFavorite(fruit.id);
+        return false; // Tidak favorit lagi
+      } else {
+        await addFavorite(fruit);
+        return true; // Menjadi favorit
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Mendapatkan buah favorit dari list buah
+  static List<FruitModel> getFavoriteFruits(List<FruitModel> allFruits, List<String> favoriteIds) {
+    return allFruits.where((fruit) => 
+      favoriteIds.contains(fruit.id.toString())
     ).toList();
+  }
+
+  // Mendapatkan jumlah buah favorit
+  static Future<int> getFavoriteCount() async {
+    try {
+      final favoriteIds = await getFavoriteIds();
+      return favoriteIds.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  // Menghapus semua favorit
+  static Future<bool> clearFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_favoritesKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
