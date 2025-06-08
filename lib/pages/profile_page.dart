@@ -4,6 +4,7 @@ import 'home_page.dart';
 import 'login_page.dart';
 import 'konversi_waktu_uang_page.dart';
 import 'saran_kesan_page.dart';
+import '../widgets/logout.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -96,7 +97,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       'assets/images/profile.png',
                       width: 100,
                       height: 100,
-                      fit: BoxFit.cover,  
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback jika gambar tidak ditemukan
+                        return Container(
+                          width: 100,
+                          height: 100,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey,
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -235,12 +252,8 @@ class _ProfilePageState extends State<ProfilePage> {
             Icons.logout,
             'Keluar',
             false,
-            onTap: () async {
-              await AuthService.logout();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
+            onTap: () {
+              LogoutConfirmationDialog.show(context);
             },
           ),
         ],

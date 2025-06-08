@@ -6,6 +6,7 @@ import 'home_page.dart';
 import 'login_page.dart';
 import 'konversi_waktu_uang_page.dart';
 import 'profile_page.dart';
+import '../widgets/logout.dart';
 
 class SaranKesanPage extends StatefulWidget {
   const SaranKesanPage({Key? key}) : super(key: key);
@@ -447,12 +448,8 @@ class _SaranKesanPageState extends State<SaranKesanPage> {
               MaterialPageRoute(builder: (context) => const ProfilePage()),
             );
           }),
-          _buildNavItem(Icons.logout, 'Keluar', false, onTap: () async {
-            await AuthService.logout();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
-            );
+          _buildNavItem(Icons.logout, 'Keluar', false, onTap: () {
+            LogoutConfirmationDialog.show(context);
           }),
         ],
       ),

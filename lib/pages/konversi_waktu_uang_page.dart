@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
+import '../widgets/logout.dart';
 import 'login_page.dart';
 import 'favorite_fruit_page.dart';
 import 'home_page.dart';
@@ -560,12 +561,8 @@ class _KonversiWaktuUangPageState extends State<KonversiWaktuUangPage> {
               MaterialPageRoute(builder: (context) => const ProfilePage()),
             );
           }),
-          _buildNavItem(Icons.logout, 'Keluar', false, onTap: () async {
-            await AuthService.logout();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
-            );
+          _buildNavItem(Icons.logout, 'Keluar', false, onTap: () {
+            LogoutConfirmationDialog.show(context);
           }),
         ],
       ),

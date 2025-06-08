@@ -3,6 +3,7 @@ import '../models/fruit_model.dart';
 import '../services/fruit_api_service.dart';
 import '../services/favorite_service.dart';
 import '../services/auth_service.dart';
+import '../widgets/logout.dart';
 import 'favorite_fruit_page.dart';
 import 'fruit_detail_page.dart';
 import 'login_page.dart';
@@ -502,12 +503,8 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(builder: (context) => const ProfilePage()),
             );
           }),
-          _buildNavItem(Icons.logout, 'Keluar', false, onTap: () async {
-            await AuthService.logout();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
-            );
+          _buildNavItem(Icons.logout, 'Keluar', false, onTap: () {
+            LogoutConfirmationDialog.show(context);
           }),
         ],
       ),
