@@ -4,14 +4,12 @@ Frutty adalah aplikasi mobile bertema buah yang dikembangkan sebagai tugas akhir
 
 ## 📱 Fitur Utama
 
-- 🔐 Login dengan enkripsi dan session (tanpa Firebase)
+- 🔐 Login dengan enkripsi dan session 
 - 🍎 Menampilkan data buah & nutrisinya dari [Fruityvice API](https://www.fruityvice.com/api/fruit/all)
 - 🛒 Toko buah (pilih buah dan tambahkan ke keranjang)
 - 🔍 Pencarian buah berdasarkan nama
-- 💰 Konversi mata uang (IDR, USD, EUR)
+- 💰 Konversi mata uang (IDR, USD, JPY)
 - 🕒 Konversi waktu (WIB, WITA, WIT, London)
-- 🔔 Notifikasi seputar konsumsi buah
-- 📡 Sensor sederhana (accelerometer)
 - 👤 Profil pengguna (termasuk foto)
 - 📝 Saran dan kesan terhadap mata kuliah
 - 🚪 Logout dan manajemen sesi
@@ -20,8 +18,8 @@ Frutty adalah aplikasi mobile bertema buah yang dikembangkan sebagai tugas akhir
 
 1. **Clone repositori**
    ```
-   git clone https://github.com/najlanadhifa/frutty-tpm.git
-   cd frutty-tpm
+   git clone https://github.com/najlanadhifa/frutty-praktpm
+   cd frutty-praktpm
    ````
 2. **Install dependencies**
    ```
