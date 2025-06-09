@@ -66,7 +66,7 @@ class NutritionsAdapter extends TypeAdapter<Nutritions> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Nutritions(
-      calories: fields[1] as int,
+      calories: fields[1] as double,
       fat: fields[2] as double,
       sugar: fields[3] as double,
       carbohydrates: fields[4] as double,

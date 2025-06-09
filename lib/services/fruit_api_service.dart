@@ -1,249 +1,395 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:hive/hive.dart';
-import '../models/fruit_model.dart';
+import 'package:flutter/foundation.dart';
 
-class FruitService {
-  static const String apiUrl = 'https://www.fruityvice.com/api/fruit/all';
-  static const String fruitsBoxName = 'fruits_cache';
-  static const String lastUpdateKey = 'last_update';
-  
-  // Cache duration - 24 jam
-  static const Duration cacheValidDuration = Duration(hours: 24);
-  
-  // Timeout untuk request API
-  final Duration timeout = const Duration(seconds: 10);
+class ApiService {
+  // Gunakan CORS proxy untuk Flutter Web
+  static const String baseUrl =
+      kIsWeb
+          ? 'https://api.allorigins.win/get?url=https://www.fruityvice.com/api/fruit'
+          : 'https://www.fruityvice.com/api/fruit';
 
-  // Method untuk mendapatkan semua buah
-  Future<List<FruitModel>> getAllFruits() async {
+  static const Duration timeoutDuration = Duration(seconds: 30);
+
+  static const Map<String, String> _headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'User-Agent': 'Flutter Fruit App v1.0',
+  };
+
+  /// Mengambil semua data buah dengan CORS proxy untuk web
+  Future<List<dynamic>> fetchFruits() async {
     try {
-      // Buka box untuk cache buah
-      final fruitsBox = await Hive.openBox(fruitsBoxName);
-      
-      // Cek apakah cache masih valid
-      final lastUpdate = fruitsBox.get(lastUpdateKey);
-      final now = DateTime.now();
-      
-      bool shouldFetchFromAPI = true;
-      
-      if (lastUpdate != null) {
-        final lastUpdateTime = DateTime.parse(lastUpdate);
-        final timeDifference = now.difference(lastUpdateTime);
-        
-        if (timeDifference < cacheValidDuration) {
-          shouldFetchFromAPI = false;
-          print('Menggunakan cache buah (masih valid)');
-        }
+      debugPrint('🍎 Starting to fetch fruits from API...');
+      debugPrint('🌐 Platform: ${kIsWeb ? "Web" : "Mobile"}');
+
+      final String url;
+      if (kIsWeb) {
+        // Gunakan CORS proxy untuk web
+        url =
+            'https://api.allorigins.win/get?url=${Uri.encodeComponent('https://www.fruityvice.com/api/fruit/all')}';
+      } else {
+        url = '$baseUrl/all';
       }
-      
-      // Jika cache tidak valid atau tidak ada, coba ambil dari API
-      if (shouldFetchFromAPI) {
-        try {
-          print('Mengambil data buah dari API...');
-          final response = await http.get(Uri.parse(apiUrl)).timeout(timeout);
-          
-          if (response.statusCode == 200) {
-            final List<dynamic> fruitsJson = json.decode(response.body);
-            
-            // Convert JSON ke list FruitModel
-            List<FruitModel> fruits = fruitsJson.map((json) => FruitModel.fromJson(json)).toList();
-            
-            // Simpan ke cache
-            await _saveFruitsToCache(fruits, fruitsBox);
-            
-            print('Data buah berhasil diambil dari API dan disimpan ke cache');
-            return fruits;
+
+      debugPrint('📡 API URL: $url');
+
+      final client = http.Client();
+
+      try {
+        final response = await client
+            .get(Uri.parse(url), headers: _headers)
+            .timeout(timeoutDuration);
+
+        debugPrint('📊 Response Status: ${response.statusCode}');
+        debugPrint(
+          '📦 Response Body Length: ${response.body.length} characters',
+        );
+
+        if (response.statusCode == 200) {
+          if (response.body.isEmpty) {
+            throw const FormatException('Empty response from server');
+          }
+
+          dynamic jsonData;
+
+          if (kIsWeb) {
+            // Parse response dari CORS proxy
+            final proxyResponse = json.decode(response.body);
+            if (proxyResponse['status']['http_code'] == 200) {
+              jsonData = json.decode(proxyResponse['contents']);
+            } else {
+              throw HttpException(
+                'Proxy error: ${proxyResponse['status']['http_code']}',
+              );
+            }
           } else {
-            print('API error: ${response.statusCode}');
-            // Gunakan cache jika ada
-            return await _loadFruitsFromCache(fruitsBox);
+            jsonData = json.decode(response.body);
           }
-        } catch (e) {
-          print('Exception saat mengambil data dari API: $e');
-          // Gunakan cache jika ada
-          return await _loadFruitsFromCache(fruitsBox);
-        }
-      } else {
-        // Gunakan cache yang masih valid
-        return await _loadFruitsFromCache(fruitsBox);
-      }
-    } catch (e) {
-      print('Exception di getAllFruits: $e');
-      return [];
-    }
-  }
 
-  // Method untuk menyimpan buah ke cache
-  Future<void> _saveFruitsToCache(List<FruitModel> fruits, Box fruitsBox) async {
-    try {
-      // Hapus data lama
-      await fruitsBox.clear();
-      
-      // Simpan setiap buah dengan key berdasarkan ID
-      for (final fruit in fruits) {
-        await fruitsBox.put('fruit_${fruit.id}', fruit);
-      }
-      
-      // Simpan timestamp update terakhir
-      await fruitsBox.put(lastUpdateKey, DateTime.now().toIso8601String());
-      
-      print('${fruits.length} buah berhasil disimpan ke cache');
-    } catch (e) {
-      print('Error menyimpan buah ke cache: $e');
-    }
-  }
-
-  // Method untuk memuat buah dari cache
-  Future<List<FruitModel>> _loadFruitsFromCache(Box fruitsBox) async {
-    try {
-      final List<FruitModel> cachedFruits = [];
-      
-      // Ambil semua data buah dari cache
-      for (final key in fruitsBox.keys) {
-        if (key.toString().startsWith('fruit_')) {
-          final fruit = fruitsBox.get(key);
-          if (fruit is FruitModel) {
-            cachedFruits.add(fruit);
+          if (jsonData is! List) {
+            throw FormatException(
+              'Expected List but got ${jsonData.runtimeType}',
+            );
           }
-        }
-      }
-      
-      if (cachedFruits.isNotEmpty) {
-        print('${cachedFruits.length} buah dimuat dari cache');
-        // Urutkan berdasarkan ID
-        cachedFruits.sort((a, b) => a.id.compareTo(b.id));
-        return cachedFruits;
-      } else {
-        print('Cache kosong, mengembalikan list kosong');
-        return [];
-      }
-    } catch (e) {
-      print('Error memuat buah dari cache: $e');
-      return [];
-    }
-  }
 
-  // Method untuk mendapatkan buah berdasarkan ID
-  Future<FruitModel?> getFruitById(int id) async {
-    try {
-      final fruitsBox = await Hive.openBox(fruitsBoxName);
-      final fruit = fruitsBox.get('fruit_$id');
-      
-      if (fruit is FruitModel) {
-        return fruit;
+          final List<dynamic> fruits = jsonData;
+          debugPrint('✅ Successfully fetched ${fruits.length} fruits');
+
+          if (fruits.isEmpty) {
+            throw Exception('No fruits data received from API');
+          }
+
+          if (fruits.isNotEmpty) {
+            debugPrint('📋 Sample fruit data: ${fruits.first}');
+          }
+
+          return fruits;
+        } else {
+          debugPrint('❌ Server error: ${response.statusCode}');
+          debugPrint('📄 Error response: ${response.body}');
+          throw HttpException(
+            'Server returned status ${response.statusCode}: ${response.reasonPhrase}',
+          );
+        }
+      } finally {
+        client.close();
       }
-      
-      // Jika tidak ada di cache, coba ambil semua buah dan cari
-      final allFruits = await getAllFruits();
-      return allFruits.firstWhere(
-        (fruit) => fruit.id == id,
-        orElse: () => throw Exception('Fruit not found'),
+    } on SocketException catch (e) {
+      debugPrint('🔌 Network error: $e');
+      throw SocketException(
+        'Tidak ada koneksi internet. Periksa koneksi Anda dan coba lagi.',
       );
+    } on TimeoutException catch (e) {
+      debugPrint('⏰ Timeout error: $e');
+      throw TimeoutException(
+        'Koneksi timeout. Server mungkin sibuk, coba lagi.',
+        timeoutDuration,
+      );
+    } on FormatException catch (e) {
+      debugPrint('📋 Format error: $e');
+      throw FormatException(
+        'Format data dari server tidak valid: ${e.message}',
+      );
+    } on HttpException catch (e) {
+      debugPrint('🌐 HTTP error: $e');
+      rethrow;
     } catch (e) {
-      print('Exception saat mengambil buah dengan id $id: $e');
-      return null;
+      debugPrint('💥 Unexpected error: $e');
+      throw Exception('Gagal memuat data buah: $e');
     }
   }
 
-  // Method untuk mencari buah berdasarkan nama
-  Future<List<FruitModel>> searchFruits(String query) async {
+  /// Test koneksi dengan fallback ke data dummy jika gagal
+  Future<bool> testConnection() async {
     try {
-      final allFruits = await getAllFruits();
-      if (query.isEmpty) return allFruits;
-      
-      return allFruits.where((fruit) => 
-        fruit.name.toLowerCase().contains(query.toLowerCase())
-      ).toList();
-    } catch (e) {
-      print('Exception saat mencari buah: $e');
-      return [];
-    }
-  }
+      debugPrint('🔗 Testing API connection...');
 
-  // Method untuk force refresh dari API
-  Future<List<FruitModel>> forceRefreshFromAPI() async {
-    try {
-      final fruitsBox = await Hive.openBox(fruitsBoxName);
-    
-      print('Force refresh: Mengambil data dari API...');
-      final response = await http.get(Uri.parse(apiUrl)).timeout(timeout);
-    
-      if (response.statusCode == 200) {
-        final List<dynamic> fruitsJson = json.decode(response.body);
-      
-        // Convert JSON ke list FruitModel
-        List<FruitModel> fruits = fruitsJson.map((json) => FruitModel.fromJson(json)).toList();
-      
-        // Simpan ke cache
-        await _saveFruitsToCache(fruits, fruitsBox);
-      
-        print('Force refresh berhasil');
-        return fruits;
+      final String testUrl;
+      if (kIsWeb) {
+        testUrl =
+            'https://api.allorigins.win/get?url=${Uri.encodeComponent('https://www.fruityvice.com/api/fruit/banana')}';
       } else {
-        throw Exception('Server tidak dapat diakses (${response.statusCode})');
+        testUrl = '$baseUrl/banana';
+      }
+
+      final client = http.Client();
+
+      try {
+        final response = await client
+            .get(Uri.parse(testUrl), headers: _headers)
+            .timeout(const Duration(seconds: 10));
+
+        bool isConnected = false;
+
+        if (kIsWeb) {
+          if (response.statusCode == 200) {
+            final proxyResponse = json.decode(response.body);
+            isConnected = proxyResponse['status']['http_code'] == 200;
+          }
+        } else {
+          isConnected = response.statusCode == 200;
+        }
+
+        debugPrint(
+          '🔗 Connection test result: ${isConnected ? "SUCCESS" : "FAILED"} (${response.statusCode})',
+        );
+        return isConnected;
+      } finally {
+        client.close();
       }
     } catch (e) {
-      print('Exception saat force refresh: $e');
-      // Jika gagal refresh, kembalikan data cache yang ada
-      final fruitsBox = await Hive.openBox(fruitsBoxName);
-      final cachedFruits = await _loadFruitsFromCache(fruitsBox);
-    
-      if (cachedFruits.isNotEmpty) {
-        throw Exception('Tidak dapat terhubung ke server. Menggunakan data cache.');
-      } else {
-        throw Exception('Tidak dapat terhubung ke server dan tidak ada data cache.');
-      }
+      debugPrint('🔗 Connection test failed: $e');
+      return false;
     }
   }
 
-  // Method untuk menghapus cache
-  Future<void> clearCache() async {
-    try {
-      final fruitsBox = await Hive.openBox(fruitsBoxName);
-      await fruitsBox.clear();
-      print('Cache buah berhasil dihapus');
-    } catch (e) {
-      print('Error menghapus cache: $e');
-    }
+  /// Fallback data jika API tidak tersedia
+  Future<List<dynamic>> getFallbackData() async {
+    debugPrint('📦 Using fallback fruit data...');
+
+    return [
+      {
+        "name": "Apple",
+        "id": 6,
+        "family": "Rosaceae",
+        "order": "Rosales",
+        "genus": "Malus",
+        "nutritions": {
+          "calories": 52,
+          "fat": 0.4,
+          "sugar": 10.3,
+          "carbohydrates": 11.4,
+          "protein": 0.3,
+        },
+      },
+      {
+        "name": "Banana",
+        "id": 1,
+        "family": "Musaceae",
+        "order": "Zingiberales",
+        "genus": "Musa",
+        "nutritions": {
+          "calories": 96,
+          "fat": 0.2,
+          "sugar": 17.2,
+          "carbohydrates": 22.0,
+          "protein": 1.0,
+        },
+      },
+      {
+        "name": "Orange",
+        "id": 2,
+        "family": "Rutaceae",
+        "order": "Sapindales",
+        "genus": "Citrus",
+        "nutritions": {
+          "calories": 43,
+          "fat": 0.2,
+          "sugar": 8.2,
+          "carbohydrates": 8.3,
+          "protein": 1.0,
+        },
+      },
+      {
+        "name": "Strawberry",
+        "id": 3,
+        "family": "Rosaceae",
+        "order": "Rosales",
+        "genus": "Fragaria",
+        "nutritions": {
+          "calories": 29,
+          "fat": 0.4,
+          "sugar": 5.4,
+          "carbohydrates": 5.5,
+          "protein": 0.8,
+        },
+      },
+      {
+        "name": "Grape",
+        "id": 81,
+        "family": "Vitaceae",
+        "order": "Vitales",
+        "genus": "Vitis",
+        "nutritions": {
+          "calories": 69,
+          "fat": 0.16,
+          "sugar": 16.0,
+          "carbohydrates": 18.1,
+          "protein": 0.72,
+        },
+      },
+      {
+        "name": "Mango",
+        "id": 27,
+        "family": "Anacardiaceae",
+        "order": "Sapindales",
+        "genus": "Mangifera",
+        "nutritions": {
+          "calories": 60,
+          "fat": 0.38,
+          "sugar": 13.7,
+          "carbohydrates": 15.0,
+          "protein": 0.82,
+        },
+      },
+      {
+        "name": "Pineapple",
+        "id": 10,
+        "family": "Bromeliaceae",
+        "order": "Poales",
+        "genus": "Ananas",
+        "nutritions": {
+          "calories": 50,
+          "fat": 0.12,
+          "sugar": 9.85,
+          "carbohydrates": 13.12,
+          "protein": 0.54,
+        },
+      },
+      {
+        "name": "Watermelon",
+        "id": 25,
+        "family": "Cucurbitaceae",
+        "order": "Cucurbitales",
+        "genus": "Citrullus",
+        "nutritions": {
+          "calories": 30,
+          "fat": 0.2,
+          "sugar": 6.0,
+          "carbohydrates": 8.0,
+          "protein": 0.6,
+        },
+      },
+    ];
   }
 
-  // Method untuk mengecek status cache
-  Future<Map<String, dynamic>> getCacheStatus() async {
+  /// Method dengan retry dan fallback
+  Future<List<dynamic>> fetchFruitsWithFallback({int maxRetries = 2}) async {
+    int attempts = 0;
+    Exception? lastException;
+
+    while (attempts < maxRetries) {
+      try {
+        attempts++;
+        debugPrint('🔄 Attempt $attempts of $maxRetries');
+
+        final result = await fetchFruits();
+        return result;
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        debugPrint('❌ Attempt $attempts failed: $e');
+
+        if (attempts < maxRetries) {
+          final waitTime = Duration(seconds: attempts * 2);
+          debugPrint('⏳ Waiting ${waitTime.inSeconds} seconds before retry...');
+          await Future.delayed(waitTime);
+        }
+      }
+    }
+
+    // Jika semua attempt gagal, gunakan fallback data
+    debugPrint('🔄 All API attempts failed, using fallback data...');
+    return await getFallbackData();
+  }
+
+  /// Method untuk debugging
+  Future<Map<String, dynamic>> checkApiStatus() async {
+    final Map<String, dynamic> status = {
+      'isAvailable': false,
+      'responseTime': 0,
+      'error': null,
+      'sampleData': null,
+      'statusCode': null,
+      'platform': kIsWeb ? 'Web' : 'Mobile',
+      'usingProxy': kIsWeb,
+    };
+
     try {
-      final fruitsBox = await Hive.openBox(fruitsBoxName);
-      final lastUpdate = fruitsBox.get(lastUpdateKey);
-      
-      if (lastUpdate != null) {
-        final lastUpdateTime = DateTime.parse(lastUpdate);
-        final now = DateTime.now();
-        final timeDifference = now.difference(lastUpdateTime);
-        final isValid = timeDifference < cacheValidDuration;
-        
-        return {
-          'hasCache': true,
-          'lastUpdate': lastUpdateTime,
-          'isValid': isValid,
-          'timeUntilExpiry': isValid ? cacheValidDuration - timeDifference : Duration.zero,
-          'fruitsCount': fruitsBox.keys.where((key) => key.toString().startsWith('fruit_')).length,
-        };
+      final stopwatch = Stopwatch()..start();
+
+      final String testUrl;
+      if (kIsWeb) {
+        testUrl =
+            'https://api.allorigins.win/get?url=${Uri.encodeComponent('https://www.fruityvice.com/api/fruit/all')}';
       } else {
-        return {
-          'hasCache': false,
-          'lastUpdate': null,
-          'isValid': false,
-          'timeUntilExpiry': Duration.zero,
-          'fruitsCount': 0,
-        };
+        testUrl = '$baseUrl/all';
+      }
+
+      final client = http.Client();
+
+      try {
+        final response = await client
+            .get(Uri.parse(testUrl), headers: _headers)
+            .timeout(const Duration(seconds: 15));
+
+        stopwatch.stop();
+
+        status['responseTime'] = stopwatch.elapsedMilliseconds;
+        status['statusCode'] = response.statusCode;
+
+        if (kIsWeb) {
+          if (response.statusCode == 200) {
+            final proxyResponse = json.decode(response.body);
+            final proxyStatusCode = proxyResponse['status']['http_code'];
+            status['proxyStatusCode'] = proxyStatusCode;
+            status['isAvailable'] = proxyStatusCode == 200;
+
+            if (proxyStatusCode == 200) {
+              final jsonData = json.decode(proxyResponse['contents']);
+              status['sampleData'] =
+                  jsonData is List && jsonData.isNotEmpty
+                      ? jsonData.first
+                      : null;
+              status['dataCount'] = jsonData is List ? jsonData.length : 0;
+            } else {
+              status['error'] = 'Proxy HTTP $proxyStatusCode';
+            }
+          } else {
+            status['error'] =
+                'HTTP ${response.statusCode}: ${response.reasonPhrase}';
+          }
+        } else {
+          status['isAvailable'] = response.statusCode == 200;
+          if (response.statusCode == 200) {
+            final jsonData = json.decode(response.body);
+            status['sampleData'] =
+                jsonData is List && jsonData.isNotEmpty ? jsonData.first : null;
+            status['dataCount'] = jsonData is List ? jsonData.length : 0;
+          } else {
+            status['error'] =
+                'HTTP ${response.statusCode}: ${response.reasonPhrase}';
+          }
+        }
+      } finally {
+        client.close();
       }
     } catch (e) {
-      print('Error mengecek status cache: $e');
-      return {
-        'hasCache': false,
-        'lastUpdate': null,
-        'isValid': false,
-        'timeUntilExpiry': Duration.zero,
-        'fruitsCount': 0,
-      };
+      status['error'] = e.toString();
     }
+
+    return status;
   }
 }

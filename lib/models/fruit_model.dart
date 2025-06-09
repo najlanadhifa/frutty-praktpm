@@ -31,16 +31,42 @@ class FruitModel extends HiveObject {
     required this.nutritions,
   });
 
-  // Factory constructor untuk membuat instance dari JSON
+  // Factory constructor dengan error handling yang lebih baik
   factory FruitModel.fromJson(Map<String, dynamic> json) {
-    return FruitModel(
-      name: json['name'] as String,
-      id: json['id'] as int,
-      family: json['family'] as String,
-      order: json['order'] as String,
-      genus: json['genus'] as String,
-      nutritions: Nutritions.fromJson(json['nutritions'] as Map<String, dynamic>),
-    );
+    try {
+      // Validasi field yang required
+      if (json['name'] == null || json['name'].toString().isEmpty) {
+        throw FormatException('Fruit name is required');
+      }
+      
+      if (json['id'] == null) {
+        throw FormatException('Fruit id is required');
+      }
+
+      return FruitModel(
+        name: json['name'].toString(),
+        id: _parseToInt(json['id']),
+        family: json['family']?.toString() ?? 'Unknown',
+        order: json['order']?.toString() ?? 'Unknown',
+        genus: json['genus']?.toString() ?? 'Unknown',
+        nutritions: json['nutritions'] != null 
+            ? Nutritions.fromJson(json['nutritions'] as Map<String, dynamic>)
+            : Nutritions.empty(),
+      );
+    } catch (e) {
+      throw FormatException('Error parsing fruit data: $e. Data: $json');
+    }
+  }
+
+  // Helper method untuk parsing int yang aman
+  static int _parseToInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    if (value is double) return value.toInt();
+    throw FormatException('Cannot parse $value to int');
   }
 
   // Method untuk convert ke JSON
@@ -55,9 +81,30 @@ class FruitModel extends HiveObject {
     };
   }
 
-  // Method untuk membuat list dari JSON array
+  // Method untuk membuat list dari JSON array dengan error handling
   static List<FruitModel> fromJsonList(List<dynamic> jsonList) {
-    return jsonList.map((json) => FruitModel.fromJson(json)).toList();
+    final List<FruitModel> fruits = [];
+    final List<String> errors = [];
+
+    for (int i = 0; i < jsonList.length; i++) {
+      try {
+        final fruit = FruitModel.fromJson(jsonList[i] as Map<String, dynamic>);
+        fruits.add(fruit);
+      } catch (e) {
+        errors.add('Index $i: $e');
+        print('Error parsing fruit at index $i: $e');
+      }
+    }
+
+    if (fruits.isEmpty && errors.isNotEmpty) {
+      throw FormatException('Failed to parse any fruits. Errors: ${errors.join(', ')}');
+    }
+
+    if (errors.isNotEmpty) {
+      print('Warning: ${errors.length} fruits failed to parse out of ${jsonList.length}');
+    }
+
+    return fruits;
   }
 
   @override
@@ -78,7 +125,7 @@ class FruitModel extends HiveObject {
 @HiveType(typeId: 2)
 class Nutritions extends HiveObject {
   @HiveField(1)
-  final int calories;
+  final double calories;
   
   @HiveField(2)
   final double fat;
@@ -100,18 +147,44 @@ class Nutritions extends HiveObject {
     required this.protein,
   });
 
-  // Factory constructor untuk membuat instance dari JSON
+  // Factory constructor dengan parsing yang lebih robust
   factory Nutritions.fromJson(Map<String, dynamic> json) {
+    try {
+      return Nutritions(
+        calories: _parseToDouble(json['calories']),
+        fat: _parseToDouble(json['fat']),
+        sugar: _parseToDouble(json['sugar']),
+        carbohydrates: _parseToDouble(json['carbohydrates']),
+        protein: _parseToDouble(json['protein']),
+      );
+    } catch (e) {
+      throw FormatException('Error parsing nutrition data: $e. Data: $json');
+    }
+  }
+
+  // Helper method untuk parsing double yang aman
+  static double _parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return 0.0; // Default value instead of throwing error
+  }
+
+  // Factory untuk nutritions kosong
+  factory Nutritions.empty() {
     return Nutritions(
-      calories: (json['calories'] as num).toInt(),
-      fat: (json['fat'] as num).toDouble(),
-      sugar: (json['sugar'] as num).toDouble(),
-      carbohydrates: (json['carbohydrates'] as num).toDouble(),
-      protein: (json['protein'] as num).toDouble(),
+      calories: 0.0,
+      fat: 0.0,
+      sugar: 0.0,
+      carbohydrates: 0.0,
+      protein: 0.0,
     );
   }
 
-  // Method untuk convert ke JSON
   Map<String, dynamic> toJson() {
     return {
       'calories': calories,

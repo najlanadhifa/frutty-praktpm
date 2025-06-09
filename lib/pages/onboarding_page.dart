@@ -21,14 +21,6 @@ class OnboardingPage extends StatelessWidget {
                 height: 250,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 5,
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
@@ -47,7 +39,7 @@ class OnboardingPage extends StatelessWidget {
 
               // Description
               const Text(
-                'Aplikasi toko buah terbaik dan\nterjangkau di Indonesia.',
+                'Aplikasi ensiklopedia buah terbaik dan\nterjangkau di Indonesia.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
