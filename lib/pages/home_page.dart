@@ -205,9 +205,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // bikin fungsi applyfilter, case gak sensitive huruf besar/kecil bisa
   void _applyFilters() {
     List<FruitModel> filtered = List.from(_allFruits);
 
+    // kalau ada kata yang dicari, filter nama atau family buahnya
     if (_searchQuery.isNotEmpty) {
       filtered =
           filtered
@@ -222,17 +224,19 @@ class _HomePageState extends State<HomePage> {
               )
               .toList();
     }
-
+    // urutkan hasilnya sesuai pilihan user (A-Z atau Z-A)
     if (_sortOrder == 'A-Z') {
       filtered.sort((a, b) => a.name.compareTo(b.name));
     } else if (_sortOrder == 'Z-A') {
       filtered.sort((a, b) => b.name.compareTo(a.name));
     }
 
+    // ini kalo filternya udah, lgsg ke refresh muncul hasilnya 
     setState(() {
       _filteredFruits = filtered;
     });
 
+    // buat cek di console berapa data yang lolos filter
     debugPrint('Filters applied: ${filtered.length} fruits after filtering');
   }
 

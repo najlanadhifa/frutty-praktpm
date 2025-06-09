@@ -75,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 40),
-                
+
                 // Icon Register
                 Container(
                   width: 80,
@@ -90,9 +90,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: Colors.lightBlue,
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Title
                 const Text(
                   'Daftar',
@@ -102,12 +102,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: Colors.black87,
                   ),
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Subtitle
                 const Text(
-                  'Sebelum membeli buah, daftar\nterlebih dahulu.',
+                  'Sebelum mengetahui info buah, daftar\nterlebih dahulu.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -115,9 +115,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     height: 1.5,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Username Field
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +135,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _usernameController,
                       decoration: InputDecoration(
                         hintText: 'masukkan username',
-                        prefixIcon: const Icon(Icons.person, color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.person,
+                          color: Colors.grey,
+                        ),
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
@@ -159,9 +162,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Password Field
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +186,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         prefixIcon: const Icon(Icons.lock, color: Colors.grey),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {
@@ -215,9 +220,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -240,9 +245,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Register Button
                 SizedBox(
                   width: double.infinity,
@@ -256,19 +261,22 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       elevation: 0,
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Daftar',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                    child:
+                        _isLoading
+                            ? const CircularProgressIndicator(
                               color: Colors.white,
+                            )
+                            : const Text(
+                              'Daftar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
               ],
             ),

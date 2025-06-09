@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                 
                 // Subtitle
                 const Text(
-                  'Sebelum membeli buah, masuk\nterlebih dahulu.',
+                  'Sebelum mengetahui info buah, masuk\nterlebih dahulu.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
